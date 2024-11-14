@@ -3,7 +3,6 @@
 
 # In[ ]:
 
-import scikit-learn as sklearn
 import numpy as np
 import pandas
 pandas.options.mode.chained_assignment = None
