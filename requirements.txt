@@ -3,4 +3,4 @@ matplotlib
 mplsoccer
 pandas
 numpy
-sklearn
+scikit-learn
