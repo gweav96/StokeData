@@ -149,7 +149,7 @@ def shotmaps(shots, match_file, teamid, teamname, opposition, venue):
         elif df['assist_throughball'].iloc[i] == True:
             markers.append('^')
             throughball+=1
-        elif df['assist_pass'].iloc[i] == 1:
+        elif df['assist_pass'].iloc[i] == True:
             markers.append('o')
             passes+=1
         elif df['assist_def'].iloc[i] == True:

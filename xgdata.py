@@ -212,24 +212,6 @@ def get_xg(data, nmodels=5):
                 'a_passThroughBallAccurate', 'a_def', 'a_passChipped']]).astype('float32')
         
 
-        
-#        def predict(data, nmodels):
-#            ys = np.zeros((len(data[:,0]),nmodels))
-#            arr = np.arange(10)
-##            arr = np.zeros(10, dtype='int64')
-#            random.shuffle(arr)
-#            for n in range(nmodels):
-#                i = arr[n]
-#                print(str(n+1) + ' out of 10')
-#                model = modeldict['model'+str(i)]
-#                ys[:,n] = np.array(model.predict(data)).flatten()
-#                print(str(i) + str(ys[:,n]))
-#
-#    #        print(ys)
-#            mu = np.mean(ys, axis=1)
-#            sig = np.std(ys, axis=1)
-#            return mu, sig
-#        print('predicting')
 
         x_train = xtrain[['r','theta','shotCounter',
            'BigChance', 'Foot', 'Head', 'Women',
