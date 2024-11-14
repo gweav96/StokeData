@@ -16,7 +16,6 @@ import matplotlib as mpl
 import xgdata as xgdata
 import pickle
 from mplsoccer import Standardizer
-import main
 import streamlit as st
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import ast
