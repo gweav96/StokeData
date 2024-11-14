@@ -59,7 +59,7 @@ with st.sidebar:
 st.sidebar.markdown("<h2 class='custom-header' style='text-align: center; font-size: 20px;'>Select Summary/Season/Pitch Plots</h1>", unsafe_allow_html=True)
 
 tabchoice = st.sidebar.selectbox('',
-        ['Match Summary Plots', 'Season Plots', 'Pitch Plots']
+        ['Match Summary Plots', 'Season Plots - COMING SOON', 'Pitch Plots - COMING SOON']
     )
 
 summaryplots = ['Game Momentum', 'Shot Maps', 'Average Position Maps', 'Passing Sonars',
