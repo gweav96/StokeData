@@ -108,7 +108,7 @@ def shotmaps(shots, match_file, teamid, teamname, opposition, venue):
     penmissed = df.loc[df['penaltyMissed'] == True]
     df = df.loc[df['penaltyScored'] == False]
     df = df.loc[df['penaltyMissed'] == False]
-    st.write(shots['relatedevent'])
+    st.write(shots['relatedevent'].iloc[1])
     stand = Standardizer(pitch_from = 'opta', pitch_to = 'statsbomb')
     x, y  = stand.transform(df['x'],df['y'])
     df['x'] = x
