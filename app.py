@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import visuals
+#import visuals
 import numpy as np
 import xgdata as xg
 import main
