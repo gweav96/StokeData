@@ -64,7 +64,7 @@ tabchoice = st.sidebar.selectbox('',
 
 summaryplots = ['Game Momentum', 'Shot Maps', 'Average Position Maps', 'Passing Sonars',
 'xT Heatmaps', 'Final 3rd Entries', 'Passes In Final 3rd', 'Shot Assists']
-
+@st.cache_data()
 def load_team_data(team):
     
     teammatches = matchfiles.loc[(matchfiles['home'] == str(team)) | (matchfiles['away'] == str(team))]
@@ -88,7 +88,6 @@ def load_team_data(team):
 #    st.dataframe(teammatches)
     
     events = pd.DataFrame()
-    @st.cache_data()
     for n in teammatches['file']:
         load = pd.read_csv('2425/' + str(n))
         events = pd.concat((events, load))
