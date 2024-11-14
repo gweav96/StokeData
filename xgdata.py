@@ -3,7 +3,7 @@
 
 # In[ ]:
 
-
+import scikit-learn as sklearn
 import numpy as np
 import pandas
 pandas.options.mode.chained_assignment = None
@@ -16,6 +16,7 @@ import whoscored_data_engineering as wsde
 from mplsoccer import Standardizer
 import random
 import joblib
+from sklearn.preprocessing import MinMaxScaler
 
 #modeldict = dict()
 #for i in range(10):
