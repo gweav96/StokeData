@@ -12,6 +12,18 @@ pd.options.mode.chained_assignment = None
 
 import numpy as np
 
+def to_metric_coordinates_from_whoscored(data,field_dimen=(106.,68.) ):
+    '''
+    Convert positions from Whoscored units to meters (with origin at centre circle)
+    '''
+    x_columns = [c for c in data.columns if c[-1].lower()=='x'][:2]
+    y_columns = [c for c in data.columns if c[-1].lower()=='y'][:2]
+    x_columns_mod = [c+'_metrica' for c in x_columns]
+    y_columns_mod = [c+'_metrica' for c in y_columns]
+    data[x_columns_mod] = (data[x_columns]/100*106)-53
+    data[y_columns_mod] = (data[y_columns]/100*68)-34
+    return data
+
 def load_EPV_grid(fname='EPV_grid.csv'):
     """ load_EPV_grid(fname='EPV_grid.csv')
     
