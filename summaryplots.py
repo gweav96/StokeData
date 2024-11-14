@@ -139,20 +139,20 @@ def shotmaps(shots, match_file, teamid, teamname, opposition, venue):
         elif df['shotOffTarget'].iloc[i] == True:
             ec.append('orange')
             lw.append(2)
-        if df['assist_cross'].iloc[i] == True:
+        if df['a_passCrossAccurate'].iloc[i] == True:
             if df['situation'].iloc[i] in ['SetPiece','FromCorner']:
                 markers.append('D')
                 sp_crosses+=1
             else:
                 markers.append('s')
                 op_crosses+=1
-        elif df['assist_throughball'].iloc[i] == True:
+        elif df['a_passThroughBallAccurate'].iloc[i] == True:
             markers.append('^')
             throughball+=1
-        elif df['assist_pass'].iloc[i] == True:
+        elif df['a_pass'].iloc[i] == True:
             markers.append('o')
             passes+=1
-        elif df['assist_def'].iloc[i] == True:
+        elif df['a_def'].iloc[i] == True:
             markers.append('P')
             defactions+=1
         elif df['situation'].iloc[i] == 'DirectFreekick':
