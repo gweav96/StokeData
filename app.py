@@ -139,7 +139,7 @@ if tabchoice == "Match Summary Plots":
         st.pyplot(fig=fig)
         
     elif plotchoice == 'Shot Maps':
-    st.dataframe(shots)
+        st.dataframe(shots)
         _, col, __ = st.columns([1,2,1])
         with col:
             with st.expander('Click Here For Plot Explanation'):
