@@ -35,8 +35,6 @@ def get_xg(data, nmodels=5):
     finshots = pandas.DataFrame()
     for n in matches:
         dataset = alldata.loc[alldata['matchId'] == n]
-        
-#    dataset = dataset.loc[dataset['teamId'] == 96]
         shots = dataset.loc[dataset['isShot']==True]
         shots = shots.loc[shots['goalOwn'] == False].reset_index()
 
@@ -118,7 +116,7 @@ def get_xg(data, nmodels=5):
 
         for i in range(len(shots)):
 
-            related = shots['relatedevent'][i]
+            related = shots['relatedevent'].iloc[i]
             if len(related)!=0:
                 related = related[0]
                 if 'passCrossAccurate' in related:
