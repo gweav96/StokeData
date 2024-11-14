@@ -40,7 +40,6 @@ def get_xg(data, nmodels=5):
         shots = shots.loc[shots['goalOwn'] == False].reset_index()
 
         related = shots['relatedEventId']
-        print(related)
         shots['relatedevent'] = False
         for i in range(len(shots)):
 
