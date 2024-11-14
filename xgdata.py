@@ -118,7 +118,7 @@ def get_xg(data, nmodels=5):
 
             related = shots['relatedevent'].iloc[i]
             if isinstance(related, list) and len(related) != 0:
-                related = related[0]
+                related = related.iloc[0]
                 if 'passCrossAccurate' in related:
                     shots['a_passCrossAccurate'].iloc[i] = 1
                 elif 'passThroughBallAccurate' in related:
