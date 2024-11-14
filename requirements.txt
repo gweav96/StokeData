@@ -3,4 +3,3 @@ matplotlib
 mplsoccer
 pandas
 numpy
-ast
