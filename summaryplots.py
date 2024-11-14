@@ -8,7 +8,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import visuals
-import os
 import whoscored_custom_events as wsce
 import whoscored_data_engineering as wsde
 pd.options.mode.chained_assignment = None
