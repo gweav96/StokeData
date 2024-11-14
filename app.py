@@ -145,6 +145,7 @@ if tabchoice == "Match Summary Plots":
                 st.write('The position of each shot in the game is shown on the pitch, with the outer colour of the marker denoting the end result, the inner colour denoting the xG value of the shot (as per the top colourbar), and the shape of the marker denoting the type of assist.')
                 st.write('All xG values are calculated using my bespoke xG model, it\'s not recommended to compare these xG values with data from other models.')
         col1, col2 = st.columns(2)
+        st.write(shots['relatedevent'])
         fig, ax = sp.shotmaps(shots, match_file, match_file['hometeam.id'].iloc[0], match_file['home'].iloc[0], match_file['away'].iloc[0], 'H')
         col1.pyplot(fig=fig)
         fig, ax = sp.shotmaps(shots, match_file, match_file['awayteam.id'].iloc[0], match_file['away'].iloc[0], match_file['home'].iloc[0], 'A')
