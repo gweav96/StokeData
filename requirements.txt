@@ -3,5 +3,4 @@ matplotlib
 mplsoccer
 pandas
 numpy
-pickle
 ast
