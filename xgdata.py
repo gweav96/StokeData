@@ -50,6 +50,7 @@ def get_xg(data, nmodels=5):
                 ev_r = ev_r.loc[ev_r['teamId'] == shots.iloc[i]['teamId']]
                 ev_r = ev_r.loc[ev_r['matchId'] == shots.iloc[i]['matchId']]
                 ev_r = ev_r['satisfiedEventsTypes']
+                print(ev_r)
                 shots['relatedevent'].iloc[i] = ev_r
         
         shots_training = shots[['x','y','isGoal','shotBodyType','situation', 'shotCounter',
