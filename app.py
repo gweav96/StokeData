@@ -28,7 +28,7 @@ st.markdown("<h1 style='text-align: center; font-size: 30px;'>Potterlytics.blog 
 
 st.markdown("<h2 style='text-align: center; font-size: 35px;'>--------------------------------------------------------</h2>", unsafe_allow_html=True)
 
-#@st.cache_data
+@st.cache_data
 def load_over_data():
     matchfiles = pd.read_csv('2425/matchfiledata.csv')
     matchdf =pd.read_csv('2425/matchesdata.csv')
@@ -88,6 +88,7 @@ def load_team_data(team):
 #    st.dataframe(teammatches)
     
     events = pd.DataFrame()
+    @st.cache_data()
     for n in teammatches['file']:
         load = pd.read_csv('2425/' + str(n))
         events = pd.concat((events, load))
