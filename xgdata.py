@@ -4,9 +4,7 @@
 # In[ ]:
 
 
-from sklearn.model_selection import train_test_split
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
 import pandas
 pandas.options.mode.chained_assignment = None
 from numpy import loadtxt
