@@ -17,6 +17,7 @@ import random
 import joblib
 from sklearn.preprocessing import MinMaxScaler
 import streamlit as st
+import ast
 
 #modeldict = dict()
 #for i in range(10):
@@ -49,7 +50,7 @@ def get_xg(data, nmodels=5):
                 ev_r = dataset.loc[dataset['eventId'] == float(related)]
                 ev_r = ev_r.loc[ev_r['teamId'] == shots.iloc[i]['teamId']]
                 ev_r = ev_r.loc[ev_r['matchId'] == shots.iloc[i]['matchId']]
-                ev_r = ev_r['satisfiedEventsTypes']
+                ev_r = ast.literal_eval(ev_r['satisfiedEventsTypes'].iloc[0])
                 shots['relatedevent'].iloc[i] = ev_r
         
         shots_training = shots[['x','y','isGoal','shotBodyType','situation', 'shotCounter',
