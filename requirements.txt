@@ -1,0 +1,7 @@
+streamlit
+matplotlib
+mplsoccer
+pandas
+os
+numpy
+pickle
