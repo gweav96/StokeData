@@ -117,6 +117,7 @@ def get_xg(data, nmodels=5):
         for i in range(len(shots)):
 
             related = shots['relatedevent'].iloc[i]
+            print(related)
             if len(related)!=0:
                 related = related[0]
                 if 'passCrossAccurate' in related:
