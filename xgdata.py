@@ -27,7 +27,7 @@ import ast
 import xgboost as xgb
 
 model = xgb.Booster()
-model.load_model('xg.bin')
+model.load_model('xg_xy.bin')
 # In[ ]:
 
 
@@ -159,54 +159,26 @@ def get_xg(data, nmodels=5):
                'BigChance', 'Foot', 'Head',
                'OpenPlay', 'SetPiece', 'FromCorner', 'DirectFreekick', 'Women']]
         df = pandas.concat([df2, df1], axis = 1)
-        
-        # do r and theta
 
-        df['r'] = np.sqrt((120 - df['x'])**2 + (df['y'] - 40)**2)
-        ind = df['r'] <=1
-        df['r'].iloc[ind] = 1
-        # Calculate the distance to the left post (100, 45)
-        distance_to_left_post = np.sqrt((120 - df['x'])**2 + (df['y'] - 36)**2)
-
-        # Calculate the distance to the right post (100, 55)
-        distance_to_right_post = np.sqrt((120 - df['x'])**2 + (df['y'] - 44)**2)
-
-        # Create a new column to store the angle to the nearest post
-        df['angle_to_nearest_post'] = np.where(distance_to_left_post <= distance_to_right_post,
-                                               np.arctan2(df['y'] - 36, 120 - df['x']),
-                                               np.arctan2(df['y'] - 44, 120 - df['x']))
-
-        # Create a new column to store the scaled angle
-        df['theta'] = np.where((df['y'] >= 36) & (df['y'] <= 44), 1, 1 - np.abs(df['angle_to_nearest_post']) / (np.pi / 2))
-        df['1/r'] = 1/df['r']
-
-        scale_x = joblib.load('scale_x.gz')
-        loc = df[['r', '1/r']]
-        x = scale_x.fit_transform(loc)
-        xtrain = df[['r', '1/r', 'theta', 'isGoal', 'shotCounter',
+        df['y_s'] = np.abs(40-df['y'])
+        xtrain = df[['x', 'y_s', 'isGoal', 'shotCounter',
                    'BigChance', 'Foot', 'Head','Women',
                    'OpenPlay', 'SetPiece', 'FromCorner', 'DirectFreekick', 'Assisted', 'takeOn', 'a_passCrossAccurate',
                 'a_passThroughBallAccurate', 'a_def', 'a_passChipped', 'last_action', 'a_pass']]
 
-        xtrain['r'] = x[:,0]
-        xtrain['1/r'] = x[:,1]
 
         y = df['isGoal']
 
-        xtrain = xtrain[['r', '1/r', 'theta', 'shotCounter',
+        xtrain = xtrain[['x', 'y_s', 'shotCounter',
                'BigChance', 'Foot', 'Head','Women',
                'OpenPlay', 'SetPiece', 'FromCorner', 'DirectFreekick',
                 'Assisted', 'takeOn', 'a_passCrossAccurate',
                 'a_passThroughBallAccurate', 'a_def', 'a_passChipped', 'last_action', 'a_pass']]
                     
 
-#        xtrain['BigChance'] = (xtrain['BigChance'] * 0.8)+0.2
-#        xtrain['BigChance'] = (xtrain['BigChance'] * (1/(1+xtrain['r'])))
-    #    xtrain['Assisted'] = (xtrain['Assisted'] * 0.6) + 0.4
         xtrain['SetPiece'] = (xtrain['SetPiece'] + xtrain['FromCorner'])
-        
-#        print(xtrain[['r', '1/r']])
-        x_pred = np.asarray(xtrain[['r', 'theta','shotCounter',
+
+        x_pred = np.asarray(xtrain[['x', 'y_s', 'shotCounter',
                'BigChance', 'Foot', 'Head','Women',
                'OpenPlay', 'SetPiece', 'DirectFreekick',
                 'Assisted', 'takeOn', 'a_passCrossAccurate',
@@ -214,7 +186,8 @@ def get_xg(data, nmodels=5):
         
 
 
-        x_train = xtrain[['r','theta','shotCounter',
+
+        x_train = xtrain[['x', 'y_s', 'shotCounter',
            'BigChance', 'Foot', 'Head', 'Women',
            'OpenPlay', 'SetPiece','DirectFreekick',
             'Assisted', 'takeOn', 'a_passCrossAccurate',

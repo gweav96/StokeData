@@ -3,7 +3,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 #import visuals
 import numpy as np
-import xgdata as xg
 import main
 import pickle
 import whoscored_data_engineering as wsde
@@ -32,10 +31,10 @@ st.markdown("<h2 style='text-align: center; font-size: 35px;'>------------------
 def load_over_data():
     matchfiles = pd.read_csv('2425/matchfiledata.csv')
     matchdf =pd.read_csv('2425/matchesdata.csv')
+    shotsdf = pd.read_csv('2425/allshots.csv')
+    return matchfiles, matchdf, shotsdf
     
-    return matchfiles, matchdf
-    
-matchfiles, matchdf = load_over_data()
+matchfiles, matchdf, shotsdf = load_over_data()
 
 st.markdown(
     """
@@ -117,7 +116,7 @@ if tabchoice == "Match Summary Plots":
         match_data = pickle.load(f)
     events_df['Women'] = 0
 
-    shots = xg.get_xg(events_df)
+    shots = shotsdf.loc[shotsdf['matchId'] == matchid]
     events_df = main.addEpvToDataFrame(events_df)
     
     recipient = []

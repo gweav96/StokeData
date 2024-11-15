@@ -13,7 +13,7 @@ import whoscored_data_engineering as wsde
 pd.options.mode.chained_assignment = None
 from mplsoccer.pitch import Pitch, VerticalPitch
 import matplotlib as mpl
-import xgdata as xgdata
+
 import pickle
 from mplsoccer import Standardizer
 import streamlit as st
