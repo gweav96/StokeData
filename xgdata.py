@@ -186,13 +186,12 @@ def get_xg(data, nmodels=5):
         
 
 
-
         x_train = xtrain[['x', 'y_s', 'shotCounter',
            'BigChance', 'Foot', 'Head', 'Women',
            'OpenPlay', 'SetPiece','DirectFreekick',
             'Assisted', 'takeOn', 'a_passCrossAccurate',
             'a_passThroughBallAccurate', 'a_def', 'a_passChipped']]
-            
+        x_train['1/x'] = 1/x_train['x']
         counter = np.array(x_train['shotCounter'], dtype='float32').flatten()
         x_train['shotCounter'] = counter
         
