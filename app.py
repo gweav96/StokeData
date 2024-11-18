@@ -64,7 +64,7 @@ with st.sidebar:
 st.sidebar.markdown("<h2 class='custom-header' style='text-align: center; font-size: 20px;'>Select Summary/Season/Pitch Plots</h1>", unsafe_allow_html=True)
 
 tabchoice = st.sidebar.selectbox('',
-        ['Match Summary Plots', 'Season Plots - COMING SOON', 'Pitch Plots']
+        ['Match Summary Plots', 'Pitch Plots', 'Season Plots - COMING SOON']
     )
 
 summaryplots = ['Game Momentum', 'Shot Maps', 'Average Position Maps', 'Passing Sonars',
@@ -432,6 +432,9 @@ if tabchoice == 'Pitch Plots':
                     matchchoice = str(game)
                 elif len(matchids) > 1:
                     matchchoice = 'Selected ' + str(len(matchids)) + ' Matches'
+            elif matchchoice == 'Last Match':
+                    game = str(specmatch[0].split('-')[1]) + 'vs.' + str(specmatch[0].split('-')[2])
+                    matchchoice = str(game)
 
             text2 = col2.text_input('Custom Title Part 2', str(matchchoice))
             
