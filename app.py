@@ -433,7 +433,7 @@ if tabchoice == 'Pitch Plots':
                 elif len(matchids) > 1:
                     matchchoice = 'Selected ' + str(len(matchids)) + ' Matches'
             elif matchchoice == 'Last Match':
-                    game = str(specmatch[0].split('-')[1]) + 'vs.' + str(specmatch[0].split('-')[2])
+                    game = str(specmatch.split('-')[1]) + 'vs.' + str(specmatch.split('-')[2])
                     matchchoice = str(game)
 
             text2 = col2.text_input('Custom Title Part 2', str(matchchoice))
