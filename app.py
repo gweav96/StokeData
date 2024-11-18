@@ -270,7 +270,7 @@ if tabchoice == 'Pitch Plots':
     with st.sidebar:
         st.markdown("<h2 class='custom-header' style='text-align: center; font-size: 18px;'>Choose Plot Style</h2>", unsafe_allow_html=True)
         plotchoice = st.selectbox('',
-        ['Shot Map', 'Full Pitch', 'Attacking Half', 'Defending Half'])
+        ['Shot Map', 'Full Pitch - COMING SOON', 'Attacking Half - COMING SOON', 'Defending Half - COMING SOON'])
     st.markdown("<h2 class='custom-header' style='text-align: center; font-size: 18px;'>Choose Time Period</h2>", unsafe_allow_html=True)
     matchchoice = st.radio('',
         ['Last Match', 'Last 3 Matches', 'All Season', 'Select Specific Matches'],
