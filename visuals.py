@@ -1140,28 +1140,33 @@ def assist_shotmap(data, league, season, team,teamid=96, size=400,save= True):
         elif df['shotOffTarget'].iloc[i] == True:
             ec.append('cyan')
             lw.append(2)
-        if df['assist_cross'].iloc[i] == True:
-            if df['situation'].iloc[i] in ['SetPiece','FromCorner']:
-                markers.append('D')
-                sp_crosses+=1
+        if df['Assisted'].iloc[i] == True:
+            if df['assist_cross'].iloc[i] == True:
+                if df['situation'].iloc[i] in ['SetPiece','FromCorner']:
+                    markers.append('D')
+                    sp_crosses+=1
+                else:
+                    markers.append('s')
+                    op_crosses+=1
             else:
-                markers.append('s')
-                op_crosses+=1
-        elif df['assist_throughball'].iloc[i] == True:
-            markers.append('^')
-            throughball+=1
-        elif df['assist_pass'].iloc[i] == 1:
-            markers.append('o')
-            passes+=1
-        elif df['assist_def'].iloc[i] == True:
-            markers.append('P')
-            defactions+=1
-        elif df['situation'].iloc[i] == 'DirectFreekick':
-            markers.append('*')
-            directfk+=1
+                if df['assist_throughball'].iloc[i] == True:
+                    markers.append('^')
+                    throughball+=1
+                elif df['assist_pass'].iloc[i] == 1:
+                    markers.append('o')
+                    passes+=1
         else:
-            markers.append('p')
-            other+=1
+            if df['assist_def'].iloc[i] == True:
+                markers.append('P')
+                defactions+=1
+            elif df['situation'].iloc[i] == 'DirectFreekick':
+                markers.append('*')
+                directfk+=1
+            elif df['Assisted'].iloc[i] != True:
+                markers.append('p')
+                other+=1
+            else:
+                markers.append('X')
 
 
     norm = plt.Normalize(0,1)
