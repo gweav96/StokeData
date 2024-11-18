@@ -312,134 +312,136 @@ if tabchoice == 'Pitch Plots':
             matchids = []
     elif len(specmatch) > 0:
         matchids = teammatches.loc[teammatches['Match'] == specmatch]['matchId']
-
-    if len(matchids) > 0:
-        shots = shotsdf.loc[shotsdf['matchId'].isin(matchids)]
-        st.markdown("<h2 class='custom-header' style='text-align: center; font-size: 18px;'>Show Team Or Opposition Data</h2>", unsafe_allow_html=True)
-        teamoppchoice = st.radio('',
-                              [str(team), 'Opposition'],
-        horizontal = True)
         
-        if teamoppchoice == team:
-            events_df = shots.loc[shots['teamId'] == (teamdf.loc[teamdf['teamname'] == team]['teamid'].iloc[0])]
-        elif teamoppchoice == 'Opposition':
-            events_df = shots.loc[shots['teamId'] != (teamdf.loc[teamdf['teamname'] == team]['teamid'].iloc[0])]
-        st.markdown("<h2 class='custom-header' style='text-align: center; font-size: 18px;'>SELECT FROM THE OPTIONS BELOW TO CUSTOMISE YOUR PLOT</h2>", unsafe_allow_html=True)
-        st.write('')
-        st.write('')
-        preopt = len(events_df)
-        with st.expander('FURTHER PLOT OPTIONS ARE AVAILABLE IN THIS DROP-DOWN:', expanded=True):
-            col1,col2,col3 = st.columns(3)
-                
-            half = col1.radio('Choose Time Period',
-                              ['All', 'First Half', 'Second Half'], horizontal=True, index=0)
-                              
-            if half == 'First Half':
-                events_df = events_df.loc[events_df['period'] == 'FirstHalf']
-            elif half == 'Second Half':
-                events_df = events_df.loc[events_df['period'] == 'SecondHalf']
-            
-            box = col2.radio('Choose Shot Distance',
-                             ['All', 'Inside Box', 'Outside Box'], horizontal=True, index=0)
-            if box == 'Inside Box':
-                events_df = events_df.loc[(events_df['shotPenaltyArea'] == True) | (events_df['shotSixYardBox'] == True)]
-            elif box == 'Outside Box':
-                events_df = events_df.loc[(events_df['shotPenaltyArea'] == False) & (events_df['shotSixYardBox'] == False)]
-                
-            
-            xgchoice = col3.slider('Choose A Range Of xG Values',
-            0.00,1.00, (0.00,1.00))
-            
-            events_df = events_df.loc[(events_df['xG']<= xgchoice[1]) & (events_df['xG']>= xgchoice[0])]
-            
-            col1,col2 = st.columns(2)
-            outcome = col1.multiselect('Choose Shot Outcome(s)',
-            ['Goal', 'Saved', 'Off Target', 'Blocked'])
-            if outcome:
-                conditions = []
-                if 'Goal' in outcome:
-                    conditions.append(events_df['isGoal'] == True)
-                if 'Saved' in outcome:
-                    conditions.append(events_df['type'] == 'SavedShot')
-                if 'Off Target' in outcome:
-                    conditions.append(events_df['shotOffTarget'] == True)
-                if 'Blocked' in outcome:
-                    conditions.append(events_df['shotBlocked'] == True)
+    if plotchoice == 'Shot Map':
 
-                combined_condition = conditions[0]
-                for condition in conditions[1:]:
-                    combined_condition |= condition
-
-                events_df = events_df.loc[combined_condition]
+        if len(matchids) > 0:
+            shots = shotsdf.loc[shotsdf['matchId'].isin(matchids)]
+            st.markdown("<h2 class='custom-header' style='text-align: center; font-size: 18px;'>Show Team Or Opposition Data</h2>", unsafe_allow_html=True)
+            teamoppchoice = st.radio('',
+                                  [str(team), 'Opposition'],
+            horizontal = True)
             
-            assist = col2.multiselect('Choose Assist Type(s)',
-                            ['Pass', 'Cross', 'Open-Play Cross', 'Set Piece Cross', 'Through Ball', 'Defensive Action', 'Unassisted', 'Direct Free Kick'])
-            if assist:
-                conditions = []
-                if 'Pass' in assist:
-                    conditions.append((events_df['assist_pass'] == True) & (events_df['Assisted'] == True))
-                if 'Cross' in assist:
-                    conditions.append(events_df['assist_cross'] == True)
-                if 'Through Ball' in assist:
-                    conditions.append(events_df['assist_throughball'] == True)
-                if 'Defensive Action' in assist:
-                    conditions.append(events_df['assist_def'] == True)
-                if 'Unassisted' in assist:
-                    conditions.append((events_df['Assisted'] == 0) & (events_df['situation'] != 'DirectFreekick') & (events_df['assist_def'] != True))
-                if 'Set Piece Cross' in assist:
-                    conditions.append((events_df['situation'].isin(['SetPiece','FromCorner'])) & (events_df['assist_cross'] == True))
-                if 'Open-Play Cross' in assist:
-                    conditions.append((events_df['situation'] == 'OpenPlay') & (events_df['assist_cross'] == True))
-                if 'Direct Free Kick' in assist:
-                    conditions.append(events_df['situation'] == 'DirectFreekick')
+            if teamoppchoice == team:
+                events_df = shots.loc[shots['teamId'] == (teamdf.loc[teamdf['teamname'] == team]['teamid'].iloc[0])]
+            elif teamoppchoice == 'Opposition':
+                events_df = shots.loc[shots['teamId'] != (teamdf.loc[teamdf['teamname'] == team]['teamid'].iloc[0])]
+            st.markdown("<h2 class='custom-header' style='text-align: center; font-size: 18px;'>SELECT FROM THE OPTIONS BELOW TO CUSTOMISE YOUR PLOT</h2>", unsafe_allow_html=True)
+            st.write('')
+            st.write('')
+            preopt = len(events_df)
+            with st.expander('FURTHER PLOT OPTIONS ARE AVAILABLE IN THIS DROP-DOWN:', expanded=True):
+                col1,col2,col3 = st.columns(3)
                     
-                combined_condition = conditions[0]
-                for condition in conditions[1:]:
-                    combined_condition |= condition
-
-                events_df = events_df.loc[combined_condition]
+                half = col1.radio('Choose Time Period',
+                                  ['All', 'First Half', 'Second Half'], horizontal=True, index=0)
+                                  
+                if half == 'First Half':
+                    events_df = events_df.loc[events_df['period'] == 'FirstHalf']
+                elif half == 'Second Half':
+                    events_df = events_df.loc[events_df['period'] == 'SecondHalf']
                 
-            playershot = col1.multiselect('Choose Player(s)',
-                                          sorted(list(events_df['playerName'].unique()), key=lambda x: x.split(' ')[-1]))
-            if playershot:
-                if len(playershot) == 1:
-                    events_df = events_df.loc[events_df['playerName'] == playershot[0]]
-                elif len(playershot) > 1:
-                    events_df = events_df.loc[events_df['playerName'].isin(list(playershot))]
+                box = col2.radio('Choose Shot Distance',
+                                 ['All', 'Inside Box', 'Outside Box'], horizontal=True, index=0)
+                if box == 'Inside Box':
+                    events_df = events_df.loc[(events_df['shotPenaltyArea'] == True) | (events_df['shotSixYardBox'] == True)]
+                elif box == 'Outside Box':
+                    events_df = events_df.loc[(events_df['shotPenaltyArea'] == False) & (events_df['shotSixYardBox'] == False)]
+                    
+                
+                xgchoice = col3.slider('Choose A Range Of xG Values',
+                0.00,1.00, (0.00,1.00))
+                
+                events_df = events_df.loc[(events_df['xG']<= xgchoice[1]) & (events_df['xG']>= xgchoice[0])]
+                
+                col1,col2 = st.columns(2)
+                outcome = col1.multiselect('Choose Shot Outcome(s)',
+                ['Goal', 'Saved', 'Off Target', 'Blocked'])
+                if outcome:
+                    conditions = []
+                    if 'Goal' in outcome:
+                        conditions.append(events_df['isGoal'] == True)
+                    if 'Saved' in outcome:
+                        conditions.append(events_df['type'] == 'SavedShot')
+                    if 'Off Target' in outcome:
+                        conditions.append(events_df['shotOffTarget'] == True)
+                    if 'Blocked' in outcome:
+                        conditions.append(events_df['shotBlocked'] == True)
+
+                    combined_condition = conditions[0]
+                    for condition in conditions[1:]:
+                        combined_condition |= condition
+
+                    events_df = events_df.loc[combined_condition]
+                
+                assist = col2.multiselect('Choose Assist Type(s)',
+                                ['Pass', 'Cross', 'Open-Play Cross', 'Set Piece Cross', 'Through Ball', 'Defensive Action', 'Unassisted', 'Direct Free Kick'])
+                if assist:
+                    conditions = []
+                    if 'Pass' in assist:
+                        conditions.append((events_df['assist_pass'] == True) & (events_df['Assisted'] == True))
+                    if 'Cross' in assist:
+                        conditions.append(events_df['assist_cross'] == True)
+                    if 'Through Ball' in assist:
+                        conditions.append(events_df['assist_throughball'] == True)
+                    if 'Defensive Action' in assist:
+                        conditions.append(events_df['assist_def'] == True)
+                    if 'Unassisted' in assist:
+                        conditions.append((events_df['Assisted'] == 0) & (events_df['situation'] != 'DirectFreekick') & (events_df['assist_def'] != True))
+                    if 'Set Piece Cross' in assist:
+                        conditions.append((events_df['situation'].isin(['SetPiece','FromCorner'])) & (events_df['assist_cross'] == True))
+                    if 'Open-Play Cross' in assist:
+                        conditions.append((events_df['situation'] == 'OpenPlay') & (events_df['assist_cross'] == True))
+                    if 'Direct Free Kick' in assist:
+                        conditions.append(events_df['situation'] == 'DirectFreekick')
+                        
+                    combined_condition = conditions[0]
+                    for condition in conditions[1:]:
+                        combined_condition |= condition
+
+                    events_df = events_df.loc[combined_condition]
+                    
+                playershot = col1.multiselect('Choose Player(s)',
+                                              sorted(list(events_df['playerName'].unique()), key=lambda x: x.split(' ')[-1]))
+                if playershot:
+                    if len(playershot) == 1:
+                        events_df = events_df.loc[events_df['playerName'] == playershot[0]]
+                    elif len(playershot) > 1:
+                        events_df = events_df.loc[events_df['playerName'].isin(list(playershot))]
+                
+                assistids = events_df['relatedPlayerId'].unique()
+                assistnames = sorted(list(playerdf.loc[playerdf['playerId'].isin(assistids)]['playerName']), key=lambda x: x.split(' ')[-1])
+                playerassist = col2.multiselect('Choose Player(s) Assisting Shot',
+                assistnames)
+                if playerassist:
+                    chosen_assistids = playerdf.loc[playerdf['playerName'].isin(playerassist)]['playerId']
+                    events_df = events_df.loc[events_df['relatedPlayerId'].isin(chosen_assistids)]
+                    
+        if matchchoice and len(matchids)>0:
+            st.markdown("<h2 class='custom-header' style='text-align: center; font-size: 18px;'>IF YOU'D LIKE TO CHANGE THE TITLE, INPUT YOUR CUSTOM TEXT BELOW</h2>", unsafe_allow_html=True)
+            st.write('')
+            st.write('')
+            col1,col2,col3 = st.columns(3)
+            if teamoppchoice == 'Opposition':
+                teamoppchoice = 'Opposition vs ' + str(team)
+            text1 = col1.text_input('Custom Title Part 1', str(teamoppchoice))
             
-            assistids = events_df['relatedPlayerId'].unique()
-            assistnames = sorted(list(playerdf.loc[playerdf['playerId'].isin(assistids)]['playerName']), key=lambda x: x.split(' ')[-1])
-            playerassist = col2.multiselect('Choose Player(s) Assisting Shot',
-            assistnames)
-            if playerassist:
-                chosen_assistids = playerdf.loc[playerdf['playerName'].isin(playerassist)]['playerId']
-                events_df = events_df.loc[events_df['relatedPlayerId'].isin(chosen_assistids)]
-                
-    if matchchoice and len(matchids)>0:
-        st.markdown("<h2 class='custom-header' style='text-align: center; font-size: 18px;'>IF YOU'D LIKE TO CHANGE THE TITLE, INPUT YOUR CUSTOM TEXT BELOW</h2>", unsafe_allow_html=True)
-        st.write('')
-        st.write('')
-        col1,col2,col3 = st.columns(3)
-        if teamoppchoice == 'Opposition':
-            teamoppchoice = 'Opposition vs ' + str(team)
-        text1 = col1.text_input('Custom Title Part 1', str(teamoppchoice))
-        
-        if matchchoice == 'Select Specific Matches':
-            if len(matchids) == 1:
-                game = str(specmatch[0].split('-')[1]) + 'vs.' + str(specmatch[0].split('-')[2])
-                matchchoice = str(game)
-            elif len(matchids) > 1:
-                matchchoice = 'Selected ' + str(len(matchids)) + ' Matches'
+            if matchchoice == 'Select Specific Matches':
+                if len(matchids) == 1:
+                    game = str(specmatch[0].split('-')[1]) + 'vs.' + str(specmatch[0].split('-')[2])
+                    matchchoice = str(game)
+                elif len(matchids) > 1:
+                    matchchoice = 'Selected ' + str(len(matchids)) + ' Matches'
 
-        text2 = col2.text_input('Custom Title Part 2', str(matchchoice))
-        
-        if len(events_df) == preopt:
-            t3 = "All Shots"
-        else:
-            t3 = "Custom Selected Shots"
-        text3 = col3.text_input('Custom Title Part 3', t3)
-        if len(events_df.loc[(events_df['penaltyScored'] !=True) & (events_df['penaltyMissed'] != True)]) == 0:
-            st.markdown("<h2 class='custom-header' style='text-align: center; font-size: 18px;'>NO OPEN-PLAY SHOTS OCCURRED WITHIN YOUR CHOSEN OPTIONS, PLEASE CHANGE AT LEAST ONE OPTION ABOVE</h2>", unsafe_allow_html=True)
-        else:
-            fig, ax = pp.shotmaps(events_df, 'match_file', 'teamid', 'teamname', text1, text2, text3)
-            st.pyplot(fig=fig)
+            text2 = col2.text_input('Custom Title Part 2', str(matchchoice))
+            
+            if len(events_df) == preopt:
+                t3 = "All Shots"
+            else:
+                t3 = "Custom Selected Shots"
+            text3 = col3.text_input('Custom Title Part 3', t3)
+            if len(events_df.loc[(events_df['penaltyScored'] !=True) & (events_df['penaltyMissed'] != True)]) == 0:
+                st.markdown("<h2 class='custom-header' style='text-align: center; font-size: 18px;'>NO OPEN-PLAY SHOTS OCCURRED WITHIN YOUR CHOSEN OPTIONS, PLEASE CHANGE AT LEAST ONE OPTION ABOVE</h2>", unsafe_allow_html=True)
+            else:
+                fig, ax = pp.shotmaps(events_df, 'match_file', 'teamid', 'teamname', text1, text2, text3)
+                st.pyplot(fig=fig)
