@@ -276,6 +276,7 @@ if tabchoice == 'Pitch Plots':
         ['Last Match', 'Last 3 Matches', 'All Season', 'Select Specific Matches'],
         horizontal = True)
     if matchchoice == 'Select Specific Matches':
+        sizeindex = 2
         st.markdown("<h2 class='custom-header' style='text-align: center; font-size: 18px;'><<< Your Selected Matches Will Be Shown In The Sidebar</h2>", unsafe_allow_html=True)
         specmatch = st.multiselect('',
                                    list(teammatches['Match']))
@@ -288,17 +289,20 @@ if tabchoice == 'Pitch Plots':
                     st.markdown("<h2 class='custom-header' style='text-align: left; font-size: 16px;'>- " + str(specmatch[i]) + "</h2>", unsafe_allow_html=True)
     elif matchchoice == 'All Season':
         specmatch = list(teammatches['Match'])
+        sizeindex = 1
         with st.sidebar:
             st.markdown("<h2 class='custom-header' style='text-align: left; font-size: 18px;'>SELECTED MATCHES:</h2>", unsafe_allow_html=True)
             for i in range(len(specmatch)):
                 st.markdown("<h2 class='custom-header' style='text-align: left; font-size: 16px;'>- " + str(specmatch[i]) + "</h2>", unsafe_allow_html=True)
     elif matchchoice == 'Last Match':
         specmatch = (teammatches['Match'].iloc[-1])
+        sizeindex = 2
         with st.sidebar:
             st.markdown("<h2 class='custom-header' style='text-align: left; font-size: 18px;'>SELECTED MATCH:</h2>", unsafe_allow_html=True)
             st.markdown("<h2 class='custom-header' style='text-align: left; font-size: 16px;'>- " + str(specmatch) + "</h2>", unsafe_allow_html=True)
     elif matchchoice == 'Last 3 Matches':
         specmatch = list(teammatches['Match'].iloc[-3:])
+        sizeindex = 2
         with st.sidebar:
             st.markdown("<h2 class='custom-header' style='text-align: left; font-size: 18px;'>SELECTED MATCHES:</h2>", unsafe_allow_html=True)
             for i in specmatch:
@@ -443,8 +447,19 @@ if tabchoice == 'Pitch Plots':
             else:
                 t3 = "Custom Selected Shots"
             text3 = col3.text_input('Custom Title Part 3', t3)
+            
+            markersize = col2.radio('Choose Marker Size',
+                                    ['Small', 'Medium', 'Large'], horizontal=True, index=sizeindex)
+                                    
+            if markersize == 'Large':
+                size = 600
+            elif markersize == 'Medium':
+                size = 450
+            elif markersize == 'Small':
+                size = 300
+            
             if len(events_df.loc[(events_df['penaltyScored'] !=True) & (events_df['penaltyMissed'] != True)]) == 0:
                 st.markdown("<h2 class='custom-header' style='text-align: center; font-size: 18px;'>NO OPEN-PLAY SHOTS OCCURRED WITHIN YOUR CHOSEN OPTIONS, PLEASE CHANGE AT LEAST ONE OPTION ABOVE</h2>", unsafe_allow_html=True)
             else:
-                fig, ax = pp.shotmaps(events_df, 'match_file', 'teamid', 'teamname', text1, text2, text3)
+                fig, ax = pp.shotmaps(events_df, 'match_file', 'teamid', 'teamname', text1, text2, text3, size)
                 st.pyplot(fig=fig)

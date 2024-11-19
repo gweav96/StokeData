@@ -20,7 +20,7 @@ import streamlit as st
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import ast
 
-def shotmaps(shots, match_file, teamid, teamname, text1, text2, text3):
+def shotmaps(shots, match_file, teamid, teamname, text1, text2, text3, size):
     
     df = shots
 #    .loc[shots['teamId'] == teamid]
@@ -97,7 +97,7 @@ def shotmaps(shots, match_file, teamid, teamname, text1, text2, text3):
         plt.scatter(df['y'].iloc[i],df['x'].iloc[i],
                     fc = colour[i], ec = ec[i],
                     linewidth = lw[i], marker=markers[i], alpha = 0.9,
-                    s = 600, zorder=zorder[i])
+                    s = size, zorder=zorder[i])
 
     legend_labels = list(['Goal', 'Saved', 'Blocked', 'Off Target'])
     colors = ['red', 'cyan','white','orange']
