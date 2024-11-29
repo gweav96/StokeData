@@ -224,6 +224,10 @@ def fullpitch_pass(events_df, text1, text2, text3):
                            label = legend_labels[i])for i in range(6)]
 
     ax.legend(handles = scatter,loc = (0.032,0.82), fontsize = 10)
+    ax.annotate("Attacking Direction", xytext=(65,82),
+                                             xy=(75,82), color = 'white',
+                                             arrowprops=dict(arrowstyle="->", color = 'white', lw = 1), zorder = 4, va='center',
+                                ha='right',fontsize = 12)
                              
     return fig, ax
     
@@ -284,7 +288,10 @@ def fullpitch_pass_hmap(events_df, average_values, end, scatter, bins, text1, te
     plt.text(1,78, s= '@Potterlytics\npotterlytics.blog\nData via Opta',fontsize = 10,
              c='k')
              
-             
+    ax.annotate("Attacking Direction", xytext=(65,82),
+                                             xy=(75,82), color = 'k',
+                                             arrowprops=dict(arrowstyle="->", color = 'k', lw = 1), zorder = 4, va='center',
+                                ha='right',fontsize = 12)
     
     return fig, ax
     
