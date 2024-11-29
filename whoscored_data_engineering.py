@@ -53,11 +53,19 @@ def get_recipient(events_df):
     # Initialise output dataframe
     events_out = events_df.copy()
     
-    
-
+    team1 = events_out.loc[events_out['teamId'] == events_out['teamId'].unique()[0]]['playerId'].unique()
+    team2 = events_out.loc[events_out['teamId'] == events_out['teamId'].unique()[1]]['playerId'].unique()
     # Shift dataframe to calculate pass recipient
+    
     events_out["pass_recipient"] = events_out["playerId"].shift(-1)
-
+    for n in range(len(events_out)):
+        player = events_out['playerId'].iloc[n]
+        if player in team1:
+            if events_out['pass_recipient'].iloc[n] in team2 or events_out['outcomeType'].iloc[n] != 'Successful':
+                events_out['pass_recipient'].iloc[n] = False
+        elif player in team2:
+            if events_out['pass_recipient'].iloc[n] in team1 or events_out['outcomeType'].iloc[n] != 'Successful':
+                events_out['pass_recipient'].iloc[n] = False
     return events_out
 
 

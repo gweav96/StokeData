@@ -163,154 +163,10 @@ def shotmaps(shots, match_file, teamid, teamname, text1, text2, text3, size):
              fontsize = 18, c='white')
 
     return fig, ax
-
-def averagepassmaps(match_data, events_df, match_file, colour, textcolour, teamven):
-
-    sub = events_df.loc[events_df['type']=='SubstitutionOn']
-    if len(sub.loc[sub['teamId']== match_data[teamven]['teamId']]['minute']) > 0:
-        subtime = sub.loc[sub['teamId']== match_data[teamven]['teamId']]['minute'].iloc[0]
-    else:
-        subtime = events_df['maxTime']
     
-    if subtime < 45:
-        subtime = 45
+def fullpitch_pass(events_df, text1, text2, text3):
 
-    fig,ax = plt.subplots(figsize=(20,33))
-    plt.subplots_adjust(hspace=-0.05)
-    visuals.createPassNetworks(match_data, events_df, matchId=match_file['matchId'], team=match_data[teamven]['name'], max_line_width=5, marker_size=90, edgewidth=3, dh_arrow_width=25, marker_color=colour, marker_edge_color='white', shrink=30, ax=ax, kit_no_size=18, min_time = 0, max_time = subtime, textcol = textcolour, pad_top=10)
-    ax.set_title(str(match_data['home']['name']) +' '+ str(match_data['score']) +' '+ str(match_data['away']['name'])+
-                '\nEFL Championship 2024/25', c='white', y=0.92, size = 18, weight='bold')
-    ax.text(2,3, s= '@Potterlytics\npotterlytics.blog\nData via Opta',fontsize = 16,
-                 c='white')
-    ax.text(90,2, s='Plot inspired by \n@rockingAli5', fontsize=10, c='white')
-    ax.text(83,102, s='Marker size indicates\nno# of pass receipts', fontsize=12, c='white', weight='bold')
-    return fig, ax
-    
-def pass_sonars(events_df, matchdf, match_file, teamid, formation, venue):
-    pitch = VerticalPitch(half = False,pitch_type = 'statsbomb', pitch_color = '#000080', line_color = 'white',pad_top=20, linewidth=1)
-    positions = ast.literal_eval(matchdf[venue].iloc[0])[0]["formations"][0]["formationSlots"]
-    playerids = ast.literal_eval(matchdf[venue].iloc[0])[0]["formations"][0]["playerIds"]
-    shirtnumbers =ast.literal_eval(matchdf[venue].iloc[0])[0]["formations"][0]["jerseyNumbers"]
-    ftt = pitch.formations_dataframe.loc[pitch.formations_dataframe['formation'] == formation]
-    sbpos = []
-    names = []
-    for n in range(11):
-        pos = positions[n]
-        sbpos.append(ftt.loc[ftt['opta'] == pos]['statsbomb'].iloc[0][0])
-        name = events_df.loc[events_df['playerId'] == playerids[n]]['playerName'].dropna().iloc[0]
-        names.append(str(name).split(' ')[-1].replace('-', '-\n'))
-        
-    fig, ax = pitch.draw(figsize=(8,12))
-    player_text = pitch.formation(formation, positions=sbpos, xoffset = [-6, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4],
-                                  text=names, va='top', ha='center',
-                                  fontsize=14, color='white', kind='text', ax=ax)
-
-    axs = pitch.formation(formation, positions=sbpos,xoffset=[4, 4, 4,4, 4, 4, 4, 4, 4, 4, 4],
-                          height=15, polar=True, kind='axes',
-                          ax=ax)
-                          
-    df_pass = events_df.loc[events_df['type'] == 'Pass']
-    stand = Standardizer(pitch_from = 'opta', pitch_to = 'statsbomb')
-    x,y = stand.transform(df_pass['x'], df_pass['y'])
-    endx, endy = stand.transform(df_pass['endX'], df_pass['endY'])
-    bx, by = stand.transform(df_pass['blockedX'], df_pass['blockedY'])
-    df_pass['x'] = x
-    df_pass['y'] = y
-    df_pass['endX'] = endx
-    df_pass['endY'] = endy
-    df_pass['blockedX'] = bx
-    df_pass['blockedY'] = by
-    angle, distance = pitch.calculate_angle_and_distance(df_pass.x, df_pass.y, df_pass.endX,
-                                                     df_pass.endY)
-                                                     
-    mask_success = df_pass['passAccurate']==True
-    a=0
-    for name in playerids[:11]:
-        key = sbpos[a]
-        playername = events_df.loc[events_df['playerId'] == name]['playerName'].iloc[0]
-
-        mask = df_pass.playerId == name
-        
-        bs_count_all = pitch.bin_statistic_sonar(df_pass[mask].x, df_pass[mask].y, angle[mask],
-                                                 bins=(1,1,9), center=True)
-        bs_count_success = pitch.bin_statistic_sonar(df_pass[mask & mask_success].x,
-                                                     df_pass[mask & mask_success].y,
-                                                     angle[mask & mask_success],
-                                                     bins=(1,1,9), center=True)
-        bs_distance = pitch.bin_statistic_sonar(df_pass[mask].x, df_pass[mask].y, angle[mask],
-                                                values=distance[mask], statistic='mean',
-                                                bins=(1,1,9), center=True)
-        pitch.sonar(bs_count_success, stats_color=bs_distance, vmin=0, vmax=30,
-                    cmap='Blues', ec='#202020', zorder=3, ax=axs[key])
-
-        pitch.sonar(bs_count_all, color='#f2f0f0', zorder=2, ec='#202020', ax=axs[key])
-        a+=1
-        
-    if venue == 'home':
-        oppvenue = 'away'
-    else:
-        oppvenue = 'home'
-    plt.title(str(match_file[venue].iloc[0]) + '\nvs. ' +str(match_file[oppvenue].iloc[0]) +  ' (' + str(venue).title() + ')\nStarting XI Passing Sonars',
-              c='white', fontsize=18, y=0.91)
-    plt.text(0.5,0.5, s= '@Potterlytics\npotterlytics.blog\nData via Opta',fontsize = 12,
-             c='white', va='bottom')
-                          
-    return fig, ax
-
-def xt_map(events_df, matchdf, match_file, teamid, venue):
-    
-    df = events_df.loc[events_df['teamId'] == teamid]
-    stand = Standardizer(pitch_from = 'opta', pitch_to = 'statsbomb')
-    x,y = stand.transform(df['x'], df['y'])
-    endx, endy = stand.transform(df['endX'], df['endY'])
-    bx, by = stand.transform(df['blockedX'], df['blockedY'])
-    df['x'] = x
-    df['y'] = y
-    df['endX'] = endx
-    df['endY'] = endy
-    df['blockedX'] = bx
-    df['blockedY'] = by
-    df = df.dropna(subset='EPV')
-    df = df.loc[df['EPV']>0]
-    df = df.loc[(df['throwIn'] != True) & (df['passCorner']!= True) & (df['passFreekick']!=True)]
-    pitch = Pitch(pitch_type = 'statsbomb', pitch_color = '#000080', line_color = 'white', pad_top = 15, linewidth = 1,goal_type='box')
-    fig, ax = pitch.draw(figsize = (12,8))
-
-    hrange = [[0,120],[0, 80]]
-    heatmap, xedges, yedges = np.histogram2d(df['x'],df['y'],weights = np.sqrt(df['EPV']), range = hrange,
-                                             bins=(12,9))
-    extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
-    # Plotting the heatmap
-    ax.imshow(heatmap.T, origin='lower',cmap='jet',extent=extent, interpolation = 'bicubic')
-    
-
-    for i in range(len(df)):
-        if df['type'].iloc[i] == 'Pass':
-            if df['passAccurate'].iloc[i] == True:
-                al = df['EPV'].iloc[i]/0.05
-                if al > 1:
-                    al = 1
-                elif al <0:
-                    al = 0
-                ax.annotate("", xytext=(df['x'].iloc[i],df['y'].iloc[i]),
-                         xy=(df['endX'].iloc[i],df['endY'].iloc[i]),
-                         arrowprops=dict(arrowstyle="->", color = 'white', lw = df['EPV'].iloc[i] * 20, alpha = al, zorder = 4))
-                         
-    if venue == 'home':
-        oppvenue = 'away'
-    else:
-        oppvenue = 'home'
-    plt.title(str(match_file[venue].iloc[0]) + '\nvs. ' +str(match_file[oppvenue].iloc[0]) +  ' (' + str(venue).title() + ')\nOpen-Play xT Starting Zones',
-              c='white', fontsize=18, y=0.87)
-              
-    plt.text(s='Arrows Show Highest xT Passes', x = 0, y=-1, c='white', weight='bold')
-    plt.text(0.5,79, s= '@Potterlytics\npotterlytics.blog\nData via Opta',fontsize = 12,
-             c='white', va='bottom')
-    return fig, ax
-
-def pass_to_fin3rd(events_df, matchdf, match_file, teamid, venue):
-
-    df = events_df.loc[events_df['teamId'] == teamid]
+    df = events_df
     stand = Standardizer(pitch_from = 'opta', pitch_to = 'statsbomb')
     x,y = stand.transform(df['x'], df['y'])
     endx, endy = stand.transform(df['endX'], df['endY'])
@@ -318,42 +174,118 @@ def pass_to_fin3rd(events_df, matchdf, match_file, teamid, venue):
     df['y'] = y
     df['endX'] = endx
     df['endY'] = endy
-    df = df.loc[(df['x']<80) & (df['endX']>=80)]
-    df = df.loc[(df['passFreekick']!=True) & (df['throwIn']!=True) & (df['passCorner']!=True)]
     
     pitch = Pitch(pitch_type = 'statsbomb', pitch_color = 'navy', line_color = 'white',
-                          pad_top = 15, linewidth = 1, goal_type = 'box')
+                          pad_top = 20, linewidth = 1, goal_type = 'box')
     fig, ax = pitch.draw(figsize = (12,8))
     for i in range(len(df)):
-        if df['passAccurate'].iloc[i] == True:
-            plt.scatter(df['x'].iloc[i],df['y'].iloc[i], s=80,c='green', ec = 'lightgreen',
-                                zorder =5)
-            plt.annotate("", xytext=(df['x'].iloc[i],df['y'].iloc[i]),
-                             xy=(df['endX'].iloc[i],df['endY'].iloc[i]),
-                             arrowprops=dict(arrowstyle="->", color = 'white', lw = 2.5), zorder = 4)
-        elif df['type'].iloc[i] == 'Carry':
-            plt.scatter(df['x'].iloc[i],df['y'].iloc[i], s=80,c='blue', ec = 'lightblue',
-                            zorder =5)
-            plt.annotate("", xytext=(df['x'].iloc[i],df['y'].iloc[i]),
-                         xy=(df['endX'].iloc[i],df['endY'].iloc[i]),
-                         arrowprops=dict(arrowstyle="->", color = 'deepskyblue', lw = 2.5), zorder = 4)
-    if venue == 'home':
-        oppvenue = 'away'
-    else:
-        oppvenue = 'home'
-    plt.title(str(match_file[venue].iloc[0]) + '\nvs. ' +str(match_file[oppvenue].iloc[0]) +  ' (' + str(venue).title() + ')\nOpen-Play Final 3rd Entries',
-              c='white', fontsize=18, y=0.87)
+        if df['assist'].iloc[i] == True:
+            plt.annotate("", xytext=(x[i],y[i]),
+                         xy=(endx[i],endy[i]),
+                             arrowprops=dict(arrowstyle="->", color = 'orange',lw = 2), zorder = 3)
+        elif df['passKey'].iloc[i] == True:
+            plt.annotate("", xytext=(x[i],y[i]),
+                         xy=(endx[i],endy[i]),
+                             arrowprops=dict(arrowstyle="->", color = 'magenta',lw = 2), zorder = 2)
+        elif df['passCrossAccurate'].iloc[i] == True:
+            plt.annotate("", xytext=(x[i],y[i]),
+                         xy=(endx[i],endy[i]),
+                             arrowprops=dict(arrowstyle="->", color = 'cyan', lw = 1.5), zorder = 2)
+        elif df['passCrossInaccurate'].iloc[i] == True:
+            plt.annotate("", xytext=(x[i],y[i]),
+                         xy=(endx[i],endy[i]),
+                             arrowprops=dict(arrowstyle="->", color = 'cyan', alpha=0.8, lw = 1), zorder = 1)
+        elif df['passThroughBallAccurate'].iloc[i] == True:
+                plt.annotate("", xytext=(x[i],y[i]),
+                         xy=(endx[i],endy[i]),
+                             arrowprops=dict(arrowstyle="->", color = 'chartreuse', lw = 1.5), zorder = 2)
+        elif df['passThroughBallInaccurate'].iloc[i] == True:
+                plt.annotate("", xytext=(x[i],y[i]),
+                         xy=(endx[i],endy[i]),
+                             arrowprops=dict(arrowstyle="->", color = 'chartreuse', alpha=0.5,lw = 1), zorder = 2)
+      
+        elif df['passAccurate'].iloc[i] == True:
+            plt.annotate("", xytext=(x[i],y[i]),
+                         xy=(endx[i],endy[i]),
+                             arrowprops=dict(arrowstyle="->", color = 'white',alpha=0.6, lw = 1), zorder = 2)
+                             
+        else:
+            plt.annotate("", xytext=(x[i],y[i]),
+                         xy=(endx[i],endy[i]),
+                             arrowprops=dict(arrowstyle="->", color = 'red',alpha=0.6, lw = 0.8), zorder = 2)
+
+        plt.title('Passing Map - ' + str(text1) + '\n' + str(text2) + '\n' + str(text3) + '\nEFL Championship 2024/25', c='white', size = 18, y=0.82)
     plt.text(0.5,79, s= '@Potterlytics\npotterlytics.blog\nData via Opta',fontsize = 12,
              c='white', va='bottom')
-    legend_labels = list(['Pass', 'Carry'])
-    colors = ['green', 'blue']
-    edge = ('lightgreen','lightblue')
+    legend_labels = list(['Successful Pass - ' + str(sum(df['passAccurate'])), 'Unsuccessful Pass - ' + str(sum(df['passInaccurate'])), 'Assist - ' +str(sum(df['assist'])), 'Key Pass - ' + str(sum(df['passKey'])), 'Cross - ' + str(sum(df['passCrossAccurate'])) + ' / ' + str(sum(df['passCrossAccurate']) + sum(df['passCrossInaccurate'])), 'Through Ball - '  + str(sum(df['passThroughBallAccurate'])) + ' / ' + str(sum(df['passThroughBallAccurate']) + sum(df['passThroughBallInaccurate']))])
+    colors = ['white', 'red', 'orange', 'magenta', 'cyan', 'chartreuse']
 
-    scatter = [plt.scatter(0, -20, marker = 'o', s= 60, c = colors[i], ec = edge[i],
-                           label = legend_labels[i])for i in range(2)]
+    scatter = [plt.scatter(0, -30, marker = r'$\rightarrow$', s= 100, c = colors[i],
+                           label = legend_labels[i])for i in range(6)]
 
-    ax.legend(handles = scatter,loc = 1, fontsize = 14)
+    ax.legend(handles = scatter,loc = (0.032,0.82), fontsize = 10)
                              
+    return fig, ax
+    
+def fullpitch_pass_hmap(events_df, average_values, end, scatter, bins, text1, text2, text3, matchlen, binx, biny):
+
+    df = events_df
+    stand = Standardizer(pitch_from = 'opta', pitch_to = 'statsbomb')
+    x,y = stand.transform(df['x'], df['y'])
+    endx, endy = stand.transform(df['endX'], df['endY'])
+    df['x'] = x
+    df['y'] = y
+    df['endX'] = endx
+    df['endY'] = endy
+    
+    if bins == True:
+        xedges = [0,18,39,60,81,102,120]
+        yedges = [0,18,30,40,50,62,80]
+    else:
+        xedges = np.linspace(0,120,binx+1, endpoint=True)
+        yedges = np.linspace(0,80,biny+1, endpoint=True)
+    
+    hrange = [[0,120],[0, 80]]
+    
+    pitch = Pitch(pitch_type = 'statsbomb', pitch_color = 'white', line_color = 'k',
+                 linewidth = 2, goal_type='box', pad_right = 20, spot_scale=0.004)
+    fig, ax = pitch.draw(figsize = (12,8))
+    
+    if end == True:
+        heatmap, xedges, yedges = np.histogram2d(df['endX'],df['endY'],
+                                             bins=[xedges,yedges])
+        if scatter ==True:
+            ax.scatter(df['endX'],df['endY'], s=1, c='k', zorder=0.2, alpha=0.5)
+    else:
+        heatmap, xedges, yedges = np.histogram2d(df['x'], df['y'],
+                                             bins=[xedges,yedges])
+        if scatter ==True:
+            ax.scatter(df['x'],df['y'], s=1, c='k', zorder=0.2, alpha=0.5)
+                                             
+    if bins == True:
+        heatmap = (heatmap/matchlen) - average_values['Average Value'].values.reshape(len(xedges)-1,len(yedges)-1)
+    max = np.max((heatmap.max(),-1 * heatmap.min()))
+    if bins == False:
+        im = ax.pcolormesh(xedges, yedges, heatmap.T, cmap='RdBu_r', shading='auto',edgecolors='k',
+                   linewidth=0.5, zorder=0.1)
+    else:
+        im = ax.pcolormesh(xedges, yedges, heatmap.T, cmap='RdBu_r', shading='auto',edgecolors='k',
+                   linewidth=0.5, zorder=0.1, vmin = -1 * max, vmax = max)
+
+    colorbar = fig.colorbar(im, ax=ax, shrink = 0.8, pad = -0.1, aspect = 15)
+    if bins == True:
+        colorbar.set_ticks([-max/2, max/2])  # Set positions for ticks
+        colorbar.set_ticklabels(['< Below average', 'Above average >'], rotation = 90, va = 'center',
+                               fontsize=14, c = 'k')
+        colorbar.ax.tick_params(size=0)
+    
+    plt.title(str(text1) + '\n' + str(text2) + '\n' + str(text3), weight = 'bold',
+         fontsize = 18, y = 0.97)
+    plt.text(1,78, s= '@Potterlytics\npotterlytics.blog\nData via Opta',fontsize = 10,
+             c='k')
+             
+             
+    
     return fig, ax
     
 def pass_in_fin3rd(events_df, matchdf, match_file, teamid, venue):

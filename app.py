@@ -91,16 +91,34 @@ def load_team_data(team):
             q = q+1
         
     teammatches = teammatches.sort_values(by='Match', key=lambda x: x.str.extract(r'(\d{1,2})')[0].astype(int)).reset_index(drop=True)
-#    st.dataframe(teammatches)
     
     events = pd.DataFrame()
     for n in teammatches['file']:
         load = pd.read_csv('2425/' + str(n))
         events = pd.concat((events, load))
-
+    
     return teammatches, events
     
 teammatches, events = load_team_data(team)
+
+@st.cache_data()
+def load_zones_data():
+    pass_start_zones = pd.read_csv('2425/pass_start_zones.csv')
+    pass_end_zones = pd.read_csv('2425/pass_end_zones.csv')
+    
+    return pass_start_zones, pass_end_zones
+
+pass_start_zones, pass_end_zones = load_zones_data()
+
+recipient = []
+for n in events['matchId'].unique():
+    df = events.loc[events['matchId'] == n]
+    passdf = wsde.get_recipient(df)
+    rec = list(passdf['pass_recipient'].values)
+    recipient = recipient + rec
+
+
+events['pass_recipient'] = recipient
 
 playerdf = pd.DataFrame()
 playerdf['playerName'] = events['playerName'].dropna().unique()
@@ -270,7 +288,7 @@ if tabchoice == 'Pitch Plots':
     with st.sidebar:
         st.markdown("<h2 class='custom-header' style='text-align: center; font-size: 18px;'>Choose Plot Style</h2>", unsafe_allow_html=True)
         plotchoice = st.selectbox('',
-        ['Shot Map', 'Full Pitch - COMING SOON', 'Attacking Half - COMING SOON', 'Defending Half - COMING SOON'])
+        ['Shot Map', 'Full Pitch', 'Attacking Half - COMING SOON', 'Defending Half - COMING SOON'])
     st.markdown("<h2 class='custom-header' style='text-align: center; font-size: 18px;'>Choose Time Period</h2>", unsafe_allow_html=True)
     matchchoice = st.radio('',
         ['Last Match', 'Last 3 Matches', 'All Season', 'Select Specific Matches'],
@@ -463,3 +481,327 @@ if tabchoice == 'Pitch Plots':
             else:
                 fig, ax = pp.shotmaps(events_df, 'match_file', 'teamid', 'teamname', text1, text2, text3, size)
                 st.pyplot(fig=fig)
+    elif plotchoice == 'Full Pitch':
+        if len(matchids) > 0:
+            events_df = events.loc[events['matchId'].isin(matchids)]
+#            st.markdown("<h2 class='custom-header' style='text-align: center; font-size: 18px;'>Choose Which Actions You Want To Show</h2>", unsafe_allow_html=True)
+#            actionchoice = st.radio('',
+#                                    ['Passes', 'Defensive Actions - Coming Soon!'], horizontal=True)
+            actionchoice= 'Passes'
+            if actionchoice == 'Passes':
+                events_df = events_df.loc[events_df['type']=='Pass']
+                st.markdown("<h2 class='custom-header' style='text-align: center; font-size: 18px;'>Show Team Or Opposition Data</h2>", unsafe_allow_html=True)
+                teamoppchoice = st.radio('',
+                                  [str(team), 'Opposition'], horizontal = True)
+                if teamoppchoice == team:
+                    events_df = events_df.loc[events_df['teamId'] == (teamdf.loc[teamdf['teamname'] == team]['teamid'].iloc[0])]
+                elif teamoppchoice == 'Opposition':
+                    events_df = events_df.loc[events_df['teamId'] != (teamdf.loc[teamdf['teamname'] == team]['teamid'].iloc[0])]
+                preopt = len(events_df)
+                ev_pre = events_df
+                st.markdown("<h2 class='custom-header' style='text-align: center; font-size: 18px;'>SELECT CHALKBOARD MAP OR HEATMAP</h2>", unsafe_allow_html=True)
+                chalk = st.radio("", ['Chalkboard', 'Heatmap'], horizontal = True)
+                if chalk == 'Chalkboard':
+                    st.markdown("<h2 class='custom-header' style='text-align: center; font-size: 18px;'>SELECT FROM THE OPTIONS BELOW TO CUSTOMISE YOUR PLOT</h2>", unsafe_allow_html=True)
+                    st.write('')
+                    st.write('')
+                    with st.expander('CUSTOMISE THE DATA YOU SHOW IN THIS DROP-DOWN:'):
+                        
+                        col1,col2,col3,col4 = st.columns(4)
+                        half = col1.radio('Choose Time Period',
+                                      ['All', 'First Half', 'Second Half'], horizontal=True, index=0)
+                                      
+                        if half == 'First Half':
+                            events_df = events_df.loc[events_df['period'] == 'FirstHalf']
+                        elif half == 'Second Half':
+                            events_df = events_df.loc[events_df['period'] == 'SecondHalf']
+                        
+                        mins = col2.slider('Select Range of Minutes', int(events_df['minute'].min()),int(events_df['minute'].max()), (int(events_df['minute'].min()),int(events_df['minute'].max())))
+                        if mins:
+                            events_df = events_df.loc[(events_df['minute'] >= mins[0]) & (events_df['minute']<= mins[1])]
+                        
+                        openplay = col3.multiselect('Choose Situation', ['Open Play', 'Corner', 'Free Kick', 'Goal Kick', 'Throw In'])
+                        
+                        if openplay:
+                            conditions = []
+                            if 'Open Play' in openplay:
+                                conditions.append((events_df['passFreekick'] != True) & (events_df['passCorner'] != True) & (['GoalKick' not in i for i in events_df['qualifiers']]) & (events_df['throwIn'] != True))
+                            if 'Corner' in openplay:
+                                conditions.append(events_df['passCorner'] == True)
+                            if 'Free Kick' in openplay:
+                                conditions.append(events_df['passFreekick'] == True)
+                            if 'Goal Kick' in openplay:
+                                conditions.append(events_df['qualifiers'].str.contains('GoalKick'))
+                            if 'Throw In' in openplay:
+                                conditions.append(events_df['qualifiers'].str.contains('ThrowIn'))
+                            combined_condition = conditions[0]
+                            for condition in conditions[1:]:
+                                combined_condition |= condition
+
+                            events_df = events_df.loc[combined_condition]
+                        
+                        success = col4.radio('Choose Outcome', ['All', 'Successful', 'Unsuccessful'], horizontal=True)
+                        
+                        if success != 'All':
+                            events_df = events_df[events_df['outcomeType'] == success]
+                        
+                        col1, col2 = st.columns(2)
+                        startzone_h = col1.multiselect('Choose Horizontal Start Zone(s)', ['Defensive Penalty Area', 'Defensive 3rd', 'Middle 3rd', 'Final 3rd', 'Attacking Penalty Area'])
+                        
+                        if startzone_h:
+                            conditions = []
+                            if 'Defensive 3rd' in startzone_h:
+                                conditions.append(events_df['defensiveThird'] == True)
+                            if 'Middle 3rd' in startzone_h:
+                                conditions.append(events_df['midThird'] == True)
+                            if 'Final 3rd' in startzone_h:
+                                conditions.append(events_df['finalThird'] == True)
+                            if 'Defensive Penalty Area' in startzone_h:
+                                conditions.append((events_df['x'] <=16) & (events_df['y']<=81) & (events_df['y']>=19))
+                            if 'Attacking Penalty Area' in startzone_h:
+                                conditions.append((events_df['x'] >=81) & (events_df['y']<=81) & (events_df['y']>=19))
+                            
+                            combined_condition = conditions[0]
+                            for condition in conditions[1:]:
+                                combined_condition |= condition
+
+                            events_df = events_df.loc[combined_condition]
+                            
+                        endzone_h = col2.multiselect('Choose Horizontal End Zone(s)', ['Defensive Penalty Area', 'Defensive 3rd', 'Middle 3rd', 'Final 3rd', 'Attacking Penalty Area'])
+                        if endzone_h:
+                            conditions = []
+                            if 'Defensive 3rd' in endzone_h:
+                                conditions.append(events_df['endX'] <= 33)
+                            if 'Middle 3rd' in endzone_h:
+                                conditions.append((events_df['endX']>33) & (events_df['endX']<= 66))
+                            if 'Final 3rd' in endzone_h:
+                                conditions.append(events_df['endX']> 66)
+                            if 'Defensive Penalty Area' in endzone_h:
+                                conditions.append((events_df['endX'] <=16) & (events_df['endY']<=81) & (events_df['endY']>=19))
+                            if 'Attacking Penalty Area' in endzone_h:
+                                conditions.append((events_df['endX'] >=81) & (events_df['endY']<=81) & (events_df['endY']>=19))
+                                
+                            combined_condition = conditions[0]
+                            for condition in conditions[1:]:
+                                combined_condition |= condition
+
+                            events_df = events_df.loc[combined_condition]
+                            
+                        startchannel_h = col1.multiselect('Choose Vertical Start Channel(s)', ['Left Wing', 'Left Half Space', 'Central', 'Right Half Space', 'Right Wing'])
+                        
+                        if startchannel_h:
+                            conditions = []
+                            if 'Left Wing' in startchannel_h:
+                                conditions.append(events_df['y'] <= 19)
+                            if 'Left Half Space' in startchannel_h:
+                                conditions.append((events_df['y'] > 19) & (events_df['y'] < 37))
+                            if 'Central' in startchannel_h:
+                                conditions.append((events_df['y'] >= 37) & (events_df['y'] <= 63))
+                            if 'Right Wing' in startchannel_h:
+                                conditions.append(events_df['y'] >= 81)
+                            if 'Eight Half Space' in startchannel_h:
+                                conditions.append((events_df['y'] < 81) & (events_df['y'] < 63))
+                                
+                            combined_condition = conditions[0]
+                            for condition in conditions[1:]:
+                                combined_condition |= condition
+
+                            events_df = events_df.loc[combined_condition]
+                            
+                        endchannel_h = col2.multiselect('Choose Vertical End Channel(s)', ['Left Wing', 'Left Half Space', 'Central', 'Right Half Space', 'Right Wing'])
+                        
+                        if endchannel_h:
+                            conditions = []
+                            if 'Left Wing' in endchannel_h:
+                                conditions.append(events_df['endY'] <= 19)
+                            if 'Left Half Space' in endchannel_h:
+                                conditions.append((events_df['endY'] > 19) & (events_df['endY'] < 37))
+                            if 'Central' in endchannel_h:
+                                conditions.append((events_df['endY'] >= 37) & (events_df['endY'] <= 63))
+                            if 'Right Wing' in endchannel_h:
+                                conditions.append(events_df['endY'] >= 81)
+                            if 'Eight Half Space' in endchannel_h:
+                                conditions.append((events_df['endY'] < 81) & (events_df['endY'] < 63))
+                                
+                            combined_condition = conditions[0]
+                            for condition in conditions[1:]:
+                                combined_condition |= condition
+
+                            events_df = events_df.loc[combined_condition]
+                            
+                        col1, col2, col3, col4 = st.columns(4)
+                        
+                        startx = col1.slider('Choose Specific Horizontal Start Co-ordinates (Opta)',
+                        0,100, (0,100))
+                        
+                        if startx:
+                            events_df = events_df.loc[(events_df['x'] >= startx[0]) & (events_df['x']<=startx[1])]
+                            
+                        endx = col2.slider('Choose Specific Horizontal End Co-ordinates (Opta)',
+                        0,100, (0,100))
+                        
+                        if endx:
+                            events_df = events_df.loc[(events_df['endX'] >= endx[0]) & (events_df['endX']<=endx[1])]
+                            
+                        starty = col3.slider('Choose Specific Vertical Start Co-ordinates (Opta)',
+                        0,100, (0,100))
+                        
+                        if starty:
+                            events_df = events_df.loc[(events_df['y'] >= starty[0]) & (events_df['y']<=starty[1])]
+                            
+                        starty = col4.slider('Choose Specific Vertical End Co-ordinates (Opta)',
+                        0,100, (0,100))
+                        
+                        if starty:
+                            events_df = events_df.loc[(events_df['endY'] >= starty[0]) & (events_df['endY']<=starty[1])]
+                        
+                        col1, col2, col3 = st.columns(3)
+                        
+                        eventchoice = col1.multiselect('Choose Specific Event(s)', ['Assist', 'Key Pass', 'Cross', 'Through Ball', 'Progressive', 'Switch'])
+                        
+                        if eventchoice:
+                            conditions = []
+                            if 'Key Pass' in eventchoice:
+                                conditions.append(events_df['passKey'] == True)
+                            if 'Assist' in eventchoice:
+                                conditions.append(events_df['assist'] == True)
+                            if 'Cross' in eventchoice:
+                                conditions.append((events_df['passCrossAccurate']==True) | (events_df['passCrossInaccurate'] == True))
+                            if 'Through Ball' in eventchoice:
+                                conditions.append((events_df['passThroughBallAccurate']==True) | (events_df['passThroughBallInaccurate'] == True))
+                            if 'Progressive' in eventchoice:
+                                conditions.append((events_df['x']>33) & (((100 - events_df['endX'])**2 + (50 - events_df['endY'])**2 < 0.75 * ((100 - events_df['x'])**2 + (50 - events_df['y'])**2))))
+                            if 'Switch' in eventchoice:
+                                conditions.append((((events_df['endY']<50) & (events_df['y']>50)) | ((events_df['endY']>50) & (events_df['y']<50))) & ((events_df['endY'] <= 19) | (events_df['endY'] >= 81)))
+                                
+                            combined_condition = conditions[0]
+                            for condition in conditions[1:]:
+                                combined_condition |= condition
+
+                            events_df = events_df.loc[combined_condition]
+                            
+                        player = col2.multiselect('Choose Player(s) Making Passes', sorted(list(events_df['playerName'].unique()), key=lambda x: x.split(' ')[-1]))
+                        
+                        if player:
+                            events_df = events_df.loc[events_df['playerName'].isin(player)]
+                        
+                        receivedids = events_df.loc[events_df['passAccurate'] == True]['pass_recipient'].unique()
+                        receivednames = sorted(list(playerdf.loc[playerdf['playerId'].isin(receivedids)]['playerName']), key=lambda x: x.split(' ')[-1])
+                        playerrec = col3.multiselect('Choose Player(s) Receiving Passes', receivednames)
+                        
+                        if playerrec:
+                            idrec = playerdf.loc[playerdf['playerName'].isin(playerrec)]['playerId']
+                            events_df = events_df.loc[events_df['pass_recipient'].isin(idrec)]
+                        
+                        col1, col2 = st.columns(2)
+                        direction = col1.multiselect('Choose Pass Direction(s)', ['Forwards', 'Backwards', 'Left', 'Right'])
+                        
+                        if direction:
+                            conditions = []
+                            if 'Forwards' in direction:
+                                conditions.append(events_df['passForward'] == True)
+                            if 'Backwards' in direction:
+                                conditions.append(events_df['passBack'] == True)
+                            if 'Left' in direction:
+                                conditions.append(events_df['passLeft'] == True)
+                            if 'Right' in direction:
+                                conditions.append(events_df['passRight'] == True)
+                                
+                            combined_condition = conditions[0]
+                            for condition in conditions[1:]:
+                                combined_condition |= condition
+
+                            events_df = events_df.loc[combined_condition]
+                            
+                        length = col2.multiselect('Choose Pass Distance(s)', ['Short', 'Medium', 'Long'])
+
+                        if length:
+                            conditions = []
+                            if 'Short' in length:
+                                conditions.append(((events_df['endX'] - events_df['x'])**2 + (events_df['endY'] - events_df['y'])**2) < 225)
+                            if 'Medium' in length:
+                                conditions.append((((events_df['endX'] - events_df['x'])**2 + (events_df['endY'] - events_df['y'])**2) >= 225) & (((events_df['endX'] - events_df['x'])**2 + (events_df['endY'] - events_df['y'])**2) < 900))
+                            if 'Long' in length:
+                                conditions.append(((events_df['endX'] - events_df['x'])**2 + (events_df['endY'] - events_df['y'])**2) >= 900)
+                            combined_condition = conditions[0]
+                            for condition in conditions[1:]:
+                                combined_condition |= condition
+
+                            events_df = events_df.loc[combined_condition]
+                
+                
+                if chalk == 'Heatmap':
+                    _,col,_ = st.columns([1,2,1])
+                    col.markdown("<h2 class='custom-header' style='text-align: center; font-size: 18px;'>SHOW START POINTS OR END POINTS OF PASSES (END POINTS AUTOMATICALLY SELECTS ONLY SUCCESSFUL PASSES)</h2>", unsafe_allow_html=True)
+                    end = col.radio('', ['Start Points', 'End Points'] ,horizontal=True)
+                    col.markdown("<h2 class='custom-header' style='text-align: center; font-size: 18px;'>SHOW SCATTER POINTS ON PLOT?</h2>", unsafe_allow_html=True)
+                    st.write("")
+                    _,col,_ = st.columns([10,1,10])
+                    scatter = col.toggle('', True)
+                    _,col,_ = st.columns([1,2,1])
+                    col.markdown("<h2 class='custom-header' style='text-align: center; font-size: 18px;'>COMPARE WITH LEAGUE AVERAGE?</h2>", unsafe_allow_html=True)
+                    st.write("")
+                    _,col,_ = st.columns([10,1,10])
+                    bins = col.toggle(' ',True)
+                    if end == 'End Points':
+                        end = True
+                        events_df = events_df[events_df['passAccurate'] == True]
+                        average_values = pass_end_zones
+                    else:
+                        end = False
+                        average_values = pass_start_zones
+                    matchlen = len(events_df['matchId'].unique())
+                    if bins == True:
+                        events_df = events_df
+                        binx=0
+                        biny=0
+                    else:
+                        col1,col2 = st.columns(2)
+                        binx = col1.slider('Select Number Of Horizontal Bins', 2,24, (6))
+                        biny =col2.slider('Select Number Of Vertical Bins', 2,16, (5))
+                
+                col1,col2,col3 = st.columns(3)
+                if teamoppchoice == 'Opposition':
+                    teamoppchoice = 'Opposition vs ' + str(team)
+                text1 = col1.text_input('Custom Title Part 1', str(teamoppchoice))
+                
+                if matchchoice == 'Select Specific Matches':
+                    if len(matchids) == 1:
+                        game = str(specmatch[0].split('-')[1]) + 'vs.' + str(specmatch[0].split('-')[2])
+                        matchchoice = str(game)
+                    elif len(matchids) > 1:
+                        matchchoice = 'Selected ' + str(len(matchids)) + ' Matches'
+                elif matchchoice == 'Last Match':
+                        game = str(specmatch.split('-')[1]) + 'vs.' + str(specmatch.split('-')[2])
+                        matchchoice = str(game)
+
+                text2 = col2.text_input('Custom Title Part 2', str(matchchoice))
+                
+                if len(events_df) == preopt:
+                    t3 = "All Passes"
+                else:
+                    t3 = "Custom Selected Passes"
+                if chalk == 'Heatmap':
+                    if end == True:
+                        t3 = "Endpoint of Passes"
+                    else:
+                        t3 = "Startpoint of Passes"
+                    if bins == True:
+                        t3 = t3 + ' - Compared With League Average'
+                text3 = col3.text_input('Custom Title Part 3', t3)
+                if chalk == 'Chalkboard':
+                    if len(events_df) > 500:
+                        button = st.button("Lots of data! To avoid lag every time something is changed, click here when you're ready to make the plot", use_container_width=True)
+                        if button == True:
+                            fig, ax = pp.fullpitch_pass(events_df, text1, text2, text3)
+                            st.pyplot(fig=fig)
+                    elif len(events_df) > 0:
+                        fig, ax = pp.fullpitch_pass(events_df, text1, text2, text3)
+                        st.pyplot(fig=fig)
+                else:
+                    fig, ax = pp.fullpitch_pass_hmap(events_df,average_values, end,scatter, bins, text1, text2, text3, matchlen, binx, biny)
+                    st.pyplot(fig=fig)
+                    
+
+
+
