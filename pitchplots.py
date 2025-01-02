@@ -140,7 +140,7 @@ def shotmaps(shots, match_file, teamid, teamname, text1, text2, text3, size):
 
 
     ax.text(s='Average \nShot Distance\n' +str(np.round(np.mean(120-df['x']),1)) + 'm',
-           x =9.2, y= np.mean(df['x'])+1.5, c='white', rotation = 90, size = 16)
+           x =9.35, y= np.mean(df['x'])+1.5, c='white', rotation = 90, size = 16)
            
 #    if venue == 'H':
 #        venue = 'At Home'

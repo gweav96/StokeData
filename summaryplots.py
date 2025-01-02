@@ -49,7 +49,7 @@ def momentum(events_df, match_file):
     teamids = events_df['teamId'].unique()
     epvsplit = epvhome - epvaway
     epvsplit[0] = 0
-    epvsplit = epvsplit/(6*max(np.abs(epvsplit)))
+    epvhome = epvhome/(6*max(np.abs(epvsplit)))
     fig, ax = plt.subplots(figsize=(10,6))
     plt.plot(np.array(range(maxtime+1)), epvsplit, c='grey')
     plt.fill_between(np.array(range(maxtime+1)), epvsplit, np.zeros(maxtime+1), where = epvsplit>= 0,
@@ -93,12 +93,96 @@ def momentum(events_df, match_file):
     plt.xlabel('Minute')
     plt.ylim(-0.25,0.26)
     plt.xlim(-5, maxtime+3)
-    plt.title('Scaled Momentum via xT')
+    plt.title('Scaled 5-Minute Rolling Momentum Difference via EPV')
     plt.text(s=str(match_file['home'].iloc[0]) + r'$\rightarrow$',  x=-4, y=0.125, rotation = 90, fontsize=12, va='center')
     plt.text(s=r'$\leftarrow$' + str(match_file['away'].iloc[0]),  x=-4, y=-0.125, rotation = 90, fontsize=12, va='center')
 
     plt.text(70,-0.23, s= '@Potterlytics\npotterlytics.blog\nData via Opta',fontsize = 12,
                  c='k', alpha=0.7)
+    return fig, ax
+    
+def cumulative_momentum(events_df, match_file, neg):
+    p_home = events_df.loc[events_df['teamId'] == match_file['hometeam.id'].iloc[0]]
+    p_home = p_home.dropna(subset=['EPV'])
+    if neg == False:
+        p_home = p_home.loc[p_home['EPV']>=0]
+    
+    maxtime =int(events_df['maxMinute'].iloc[0])
+    epvhome = np.zeros(maxtime+1)
+    for i in range(maxtime):
+        dat = p_home.loc[p_home['expandedMinute'] <= i]
+        dat = dat.loc[dat['expandedMinute'] >= (i-1)]['EPV']
+        if len(dat) !=0:
+            epvhome[i+1] = sum(dat.values)
+            
+    p_away = events_df.loc[events_df['teamId'] == match_file['awayteam.id'].iloc[0]]
+    p_away = p_away.dropna(subset=['EPV'])
+    if neg == False:
+        p_away = p_away.loc[p_away['EPV']>=0]
+    epvaway = np.zeros(maxtime+1)
+    for i in range(maxtime):
+        dat = p_away.loc[p_away['expandedMinute'] <= i]
+        dat = dat.loc[dat['expandedMinute'] >= (i-1)]['EPV']
+        if len(dat) !=0:
+            epvaway[i+1] = sum(dat.values)
+        
+    goals = events_df.loc[events_df['isGoal'] == 1]
+    colours = dict({str(int(match_file['hometeam.id'].iloc[0])) : 'r', str(int(match_file['awayteam.id'].iloc[0])) : 'b'})
+    teamids = events_df['teamId'].unique()
+    epvsplit = epvhome - epvaway
+    epvsplit[0] = 0
+    ma = max((np.sum(epvhome), np.sum(epvaway)))
+    epvhome = epvhome/(ma)
+    epvaway = epvaway/(ma)
+    fig, ax = plt.subplots(figsize=(10,6))
+    plt.plot(np.array(range(maxtime+1)), np.cumsum(epvhome), c='red', label = match_file['home'])
+    plt.plot(np.array(range(maxtime+1)), np.cumsum(epvaway), c='blue', label = match_file['away'])
+
+    plt.fill_between(np.array(range(maxtime+1)), np.cumsum(epvhome), np.cumsum(epvaway), where = np.cumsum(epvhome)> np.cumsum(epvaway),
+                     facecolor='red', interpolate=True, alpha=0.3)
+    plt.fill_between(np.array(range(maxtime+1)), np.cumsum(epvhome), np.cumsum(epvaway), where = np.cumsum(epvhome)< np.cumsum(epvaway),
+                     facecolor='blue', interpolate=True, alpha=0.3)
+
+    hg = 0
+    ag = 0
+    if len(goals)>0:
+        for n in range(len(goals)):
+            if goals['goalOwn'].iloc[n] == True:
+                team = goals['teamId'].iloc[n]
+                if team == match_file['hometeam.id'].iloc[0]:
+                    ag+=1
+                elif team == match_file['awayteam.id'].iloc[0]:
+                    hg+=1
+                for i in teamids:
+                    if i != team:
+                        teamnumber = i
+                cid = teamnumber
+                plt.axvline(goals['expandedMinute'].iloc[n], ymax=0.8, ls='--', c=colours[str(cid)])
+                plt.scatter(goals['expandedMinute'].iloc[n], y=1.08, s=200, ec=colours[str(cid)],
+                        c='white', lw=3)
+                plt.text(x=goals['expandedMinute'].iloc[n], y=1.12, s=str(hg) + ' - ' + str(ag), ha='center', va='bottom', fontsize=10, rotation = 90)
+            else:
+                team = goals['teamId'].iloc[n]
+                if team == match_file['hometeam.id'].iloc[0]:
+                    hg+=1
+                elif team == match_file['awayteam.id'].iloc[0]:
+                    ag+=1
+                plt.axvline(goals['expandedMinute'].iloc[n], ymax=0.8, ls='--', c=colours[str(int(goals['teamId'].iloc[n]))])
+                plt.scatter(goals['expandedMinute'].iloc[n], y=1.08, s=200, ec=colours[str(int(goals['teamId'].iloc[n]))],
+                            c='white', lw=3)
+                plt.text(x=goals['expandedMinute'].iloc[n], y=1.12, s=str(hg) + ' - ' + str(ag), ha='center', va='bottom', fontsize=10, rotation = 90)
+                        
+    ht = events_df.loc[events_df['period']=='FirstHalf']['minute'].max()
+    plt.axvline(ht, c='grey', lw = 2, ls='--')
+    plt.yticks([])
+    plt.xticks(list(np.linspace(0,100,21)))
+    plt.xlabel('Minute')
+    plt.ylim(0,1.3)
+    plt.xlim(-5, maxtime+3)
+    plt.title('Scaled Positive EPV Generated')
+    plt.legend(loc=(0.005,0.94), ncols=2)
+    plt.text(70,0.01, s= '@Potterlytics\npotterlytics.blog\nData via Opta',fontsize = 12,
+                 c='k', alpha=0.7, va='bottom')
     return fig, ax
 
 def shotmaps(shots, match_file, teamid, teamname, opposition, venue):
@@ -220,7 +304,7 @@ def shotmaps(shots, match_file, teamid, teamname, opposition, venue):
 
 
     ax.text(s='Average \nShot Distance\n' +str(np.round(np.mean(120-df['x']),1)) + 'm',
-           x =9.2, y= np.mean(df['x'])+1.5, c='white', rotation = 90, size = 16)
+           x =9.35, y= np.mean(df['x'])+1.5, c='white', rotation = 90, size = 16)
            
     if venue == 'H':
         venue = 'At Home'

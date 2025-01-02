@@ -67,7 +67,7 @@ tabchoice = st.sidebar.selectbox('',
         ['Match Summary Plots', 'Pitch Plots', 'Season Plots - COMING SOON']
     )
 
-summaryplots = ['Game Momentum', 'Shot Maps', 'Average Position Maps', 'Passing Sonars',
+summaryplots = ['Game Momentum', 'Cumulative EPV', 'Shot Maps', 'Average Position Maps', 'Passing Sonars',
 'xT Heatmaps', 'Final 3rd Entries', 'Passes In Final 3rd', 'Shot Assists']
 
 @st.cache_data()
@@ -164,6 +164,17 @@ if tabchoice == "Match Summary Plots":
                 st.write('The sum of expected threat created is calculated for each team across a 5 minute rolling window. The plot then shows the home team\'s xT sum minus the away team\'s xT sum, scaled and plotted against the minute of the game.')
                 st.write('Each team\'s goals are plotted with the dashed red/blue lines, with the scoreline shown above. Half time is denoted by a grey dashed line.')
         fig, ax = sp.momentum(events_df, match_file)
+        st.pyplot(fig=fig)
+        
+    elif plotchoice == 'Cumulative EPV':
+        _, col, __ = st.columns([1,2,1])
+        with col:
+            with st.expander('Click Here For Plot Explanation'):
+                st.write('The sum of expected threat created is calculated for each team. The plot then shows the cumulative sum of the home team\'s EPV generated in red, and the away team\'s EPV generated in blue, scaled and plotted against the minute of the game. This only includes positive EPV actions.')
+                st.write('Each team\'s goals are plotted with the dashed red/blue lines, with the scoreline shown above. Half time is denoted by a grey dashed line.')
+                st.write('You can choose whether to include negative EPV events (passes backwards etc.), which will penalise teams for playing backwards and recycling possession. Please think about your use case for this plot before deciding whether or not to include negative EPV events!')
+        neg = col.toggle("Include Negative EPV Events?")
+        fig, ax = sp.cumulative_momentum(events_df, match_file, neg)
         st.pyplot(fig=fig)
         
     elif plotchoice == 'Shot Maps':
